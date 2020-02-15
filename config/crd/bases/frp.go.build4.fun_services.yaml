@@ -15,6 +15,8 @@ spec:
     plural: services
     singular: service
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Service is the Schema for the services API
@@ -82,9 +84,9 @@ spec:
         status:
           description: ServiceStatus defines the observed state of Service
           properties:
-            active:
-              description: Active tells if the connection is active.
-              type: boolean
+            state:
+              description: State tells the service state.
+              type: string
           type: object
       type: object
   version: v1

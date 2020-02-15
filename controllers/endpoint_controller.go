@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 
 	frpv1 "github.com/b4fun/frpcontroller/api/v1"
 )
@@ -60,7 +61,11 @@ func (r *EndpointReconciler) handleCreateOrUpdate(
 		return ctrl.Result{}, nil
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{
+		// update 10s later
+		// TODO: can we trigger update in service side?
+		RequeueAfter: time.Duration(10 * time.Second),
+	}, nil
 }
 
 func (r *EndpointReconciler) handleDeleted(
@@ -116,6 +121,20 @@ func (r *EndpointReconciler) ensureEndpointConfigMap(
 			frpcConfig.Name),
 		)
 	}
+
+	var serviceList frpv1.ServiceList
+	err = r.List(
+		ctx, &serviceList,
+		client.InNamespace(endpoint.Namespace),
+		client.MatchingLabels{
+			labelKeyEndpointName: endpoint.Name,
+		},
+	)
+	if err != nil {
+		logger.Error(err, "list services failed")
+		return nil, err
+	}
+	fmt.Println(serviceList)
 
 	// TODO: generate real config
 	if frpcConfig.Data == nil {

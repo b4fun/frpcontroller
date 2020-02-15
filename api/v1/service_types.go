@@ -56,19 +56,27 @@ type ServiceSpec struct {
 	Selector map[string]string `json:"selector"`
 }
 
+type ServiceState string
+
+const (
+	ServiceStateActive   ServiceState = "active"
+	ServiceStateInactive ServiceState = "inactive"
+)
+
 // ServiceStatus defines the observed state of Service
 type ServiceStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Active tells if the connection is active.
+	// State tells the service state.
 	// +optional
-	Active bool `json:"active,omitempty"`
+	State ServiceState `json:"state,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
 // Service is the Schema for the services API
+// +kubebuilder:subresource:status
 type Service struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
