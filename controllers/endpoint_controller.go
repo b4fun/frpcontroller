@@ -200,8 +200,8 @@ func (r *EndpointReconciler) generateFrpcConfig(
 				Type:       strings.ToLower(string(port.Protocol)),
 				RemotePort: int(port.RemotePort),
 				// NOTE: the service is exposed with remote port
-				LocalPort:  int(port.RemotePort),
-				LocalAddr:  localAddr,
+				LocalPort: int(port.RemotePort),
+				LocalAddr: localAddr,
 			}
 		}
 	}
