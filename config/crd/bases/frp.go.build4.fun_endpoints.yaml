@@ -34,13 +34,28 @@ spec:
         spec:
           description: EndpointSpec defines the desired state of Endpoint
           properties:
-            foo:
-              description: Foo is an example field of Endpoint. Edit Endpoint_types.go
-                to remove/update
+            addr:
+              description: Addr specifies the remote endpoint address.
+              minLength: 1
               type: string
+            port:
+              description: Port specifies the remote port.
+              format: int32
+              type: integer
+            token:
+              description: Token specifies the token to connect the endpoint.
+              minLength: 1
+              type: string
+          required:
+          - addr
+          - port
           type: object
         status:
           description: EndpointStatus defines the observed state of Endpoint
+          properties:
+            state:
+              description: State tells the state of the endpoint.
+              type: string
           type: object
       type: object
   version: v1

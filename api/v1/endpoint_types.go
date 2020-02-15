@@ -12,14 +12,38 @@ type EndpointSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Endpoint. Edit Endpoint_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+
+	// Addr specifies the remote endpoint address.
+	Addr string `json:"addr"`
+
+	// +kubebuilder:validation:Min=0
+
+	// Port specifies the remote port.
+	Port int32 `json:"port"`
+
+	// +kubebuilder:validation:MinLength=1
+
+	// Token specifies the token to connect the endpoint.
+	// +optional
+	Token string `json:"token"`
 }
+
+type EndpointState string
+
+const (
+	EndpointConnected    EndpointState = "Connected"
+	EndpointDisconnected EndpointState = "Disconnected"
+)
 
 // EndpointStatus defines the observed state of Endpoint
 type EndpointStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// State tells the state of the endpoint.
+	// +optional
+	State EndpointState `json:"state"`
 }
 
 // +kubebuilder:object:root=true

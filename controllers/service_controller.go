@@ -9,7 +9,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	corev1 "github.com/b4fun/frpcontroller/api/v1"
+	frpv1 "github.com/b4fun/frpcontroller/api/v1"
 )
 
 // ServiceReconciler reconciles a Service object
@@ -26,7 +26,7 @@ func (r *ServiceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	logger := r.Log.WithValues("service", req.NamespacedName)
 
-	var service corev1.Service
+	var service frpv1.Service
 	err := r.Get(ctx, req.NamespacedName, &service)
 	switch {
 	case err == nil:
@@ -42,14 +42,14 @@ func (r *ServiceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Service{}).
+		For(&frpv1.Service{}).
 		Complete(r)
 }
 
 func (r *ServiceReconciler) handleCreateOrUpdate(
 	ctx context.Context,
 	logger logr.Logger,
-	service corev1.Service,
+	service frpv1.Service,
 ) (ctrl.Result, error) {
 	logger.Info(fmt.Sprintf("to find endpoint: %s", service.Spec.Endpoint))
 
@@ -59,7 +59,7 @@ func (r *ServiceReconciler) handleCreateOrUpdate(
 func (r *ServiceReconciler) handleDeleted(
 	ctx context.Context,
 	logger logr.Logger,
-	service corev1.Service,
+	service frpv1.Service,
 ) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
