@@ -50,12 +50,12 @@ func (r *EndpointReconciler) handleCreateOrUpdate(
 	logger logr.Logger,
 	endpoint *frpv1.Endpoint,
 ) (ctrl.Result, error) {
-	frpsConfig, err := r.ensureEndpointConfigMap(ctx, logger, endpoint)
+	frpcConfig, err := r.ensureEndpointConfigMap(ctx, logger, endpoint)
 	if err != nil {
 		return ctrl.Result{}, nil
 	}
 
-	_, err = r.ensureEndpointPod(ctx, logger, endpoint, frpsConfig)
+	_, err = r.ensureEndpointPod(ctx, logger, endpoint, frpcConfig)
 	if err != nil {
 		return ctrl.Result{}, nil
 	}
@@ -77,88 +77,211 @@ func (r *EndpointReconciler) ensureEndpointConfigMap(
 	endpoint *frpv1.Endpoint,
 ) (*corev1.ConfigMap, error) {
 	var (
-		frpsConfigList    corev1.ConfigMapList
-		frpsConfig        *corev1.ConfigMap
-		frpsConfigExisted bool
+		frpcConfigList    corev1.ConfigMapList
+		frpcConfig        *corev1.ConfigMap
+		frpcConfigExisted bool
 	)
 	err := r.List(
-		ctx, &frpsConfigList,
+		ctx, &frpcConfigList,
 		client.InNamespace(endpoint.Namespace),
 		client.MatchingFields{endpointOwnerKey: endpoint.Name},
 	)
 	if err != nil {
-		logger.Error(err, "list endpoint config map failed")
+		logger.Error(err, "list endpoint config maps failed")
 		return nil, err
 	}
-	if len(frpsConfigList.Items) == 0 {
+	if len(frpcConfigList.Items) == 0 {
 		logger.Info("no endpoint config map found, will create")
-		frpsConfigExisted = false
-		frpsConfig = &corev1.ConfigMap{
+		frpcConfigExisted = false
+		frpcConfig = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels:      map[string]string{},
-				Annotations: map[string]string{},
-				Name:        fmt.Sprintf("%s-frps", endpoint.Name),
-				Namespace:   endpoint.Namespace,
+				Labels:       map[string]string{},
+				Annotations:  map[string]string{},
+				GenerateName: fmt.Sprintf("%s-frpc-", endpoint.Name),
+				Namespace:    endpoint.Namespace,
 			},
 			Data: map[string]string{},
 		}
-		err := ctrl.SetControllerReference(endpoint, frpsConfig, r.Scheme)
+		err := ctrl.SetControllerReference(endpoint, frpcConfig, r.Scheme)
 		if err != nil {
 			logger.Error(err, "set controller reference failed")
 			return nil, err
 		}
 	} else {
-		frpsConfigExisted = true
-		frpsConfig = &frpsConfigList.Items[0]
+		frpcConfigExisted = true
+		frpcConfig = &frpcConfigList.Items[0]
 		logger.Info(fmt.Sprintf(
 			"found %d config maps, using %s",
-			len(frpsConfigList.Items),
-			frpsConfig.Name),
+			len(frpcConfigList.Items),
+			frpcConfig.Name),
 		)
 	}
 
 	// TODO: generate real config
-	if frpsConfig.Data == nil {
-		frpsConfig.Data = map[string]string{}
+	if frpcConfig.Data == nil {
+		frpcConfig.Data = map[string]string{}
 	}
-	frpsConfig.Data[frpsFileName] = `
+	frpcConfig.Data[frpcFileName] = `
 [common]
 server_addr = 127.0.0.1
 server_port = 1234
 token = foobar
 `
 
-	if frpsConfigExisted {
-		if err := r.Update(ctx, frpsConfig); err != nil {
+	if frpcConfigExisted {
+		if err := r.Update(ctx, frpcConfig); err != nil {
 			logger.Error(err, "update config map failed")
 			return nil, err
 		}
+		logger.Info(fmt.Sprintf("updated config map: %s (%s)",
+			frpcConfig.Name,
+			frpcConfig.ResourceVersion,
+		))
 	} else {
-		if err := r.Create(ctx, frpsConfig); err != nil {
+		if err := r.Create(ctx, frpcConfig); err != nil {
 			logger.Error(err, "create config map failed")
 			return nil, err
 		}
+		logger.Info(fmt.Sprintf("created config map: %s (%s)",
+			frpcConfig.Name,
+			frpcConfig.ResourceVersion,
+		))
 	}
-	logger.Info(fmt.Sprintf("created config map: %s", frpsConfig.Name))
 
-	return frpsConfig, nil
+	return frpcConfig, nil
 }
 
 func (r *EndpointReconciler) ensureEndpointPod(
 	ctx context.Context,
 	logger logr.Logger,
 	endpoint *frpv1.Endpoint,
-	frpsConfig *corev1.ConfigMap,
+	frpcConfig *corev1.ConfigMap,
 ) (*corev1.Pod, error) {
-	return nil, nil
+	var (
+		podList corev1.PodList
+		pod     *corev1.Pod
+	)
+	err := r.List(
+		ctx, &podList,
+		client.InNamespace(endpoint.Namespace),
+		client.MatchingFields{endpointOwnerKey: endpoint.Name},
+	)
+	if err != nil {
+		logger.Error(err, "list endpoint pods failed")
+		return nil, err
+	}
+
+	for _, p := range podList.Items {
+		if len(p.Annotations) > 0 {
+			configVersion, exists := p.Annotations[annotationKeyEndpointPodConfigVersion]
+			if exists && configVersion == frpcConfig.ResourceVersion {
+				pod = &p
+				logger.Info(fmt.Sprintf("found pod with updated config: %s", p.Name))
+				break
+			}
+		}
+	}
+	for _, p := range podList.Items {
+		if pod != nil && p.Name == pod.Name {
+			// retain
+			continue
+		}
+		err = r.Delete(ctx, &p)
+		if err != nil {
+			logger.Error(err, fmt.Sprintf("delete pod %s failed", p.Name))
+			return nil, err
+		}
+		logger.Info(fmt.Sprintf("deleted pod %s", p.Name))
+	}
+
+	if pod != nil {
+		return pod, nil
+	}
+
+	const (
+		frpcVolumeName    = "frpc-config"
+		frpcContainerName = "frpc"
+	)
+
+	pod = &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{},
+			Annotations: map[string]string{
+				annotationKeyEndpointPodConfigVersion: frpcConfig.ResourceVersion,
+			},
+			GenerateName: fmt.Sprintf("%s-frpc-", endpoint.Name),
+			Namespace:    endpoint.Namespace,
+		},
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: frpcVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: frpcConfig.Name,
+							},
+						},
+					},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:    frpcContainerName,
+					Image:   frpDockerImage,
+					Command: []string{"/opt/frp/frpc"},
+					Args:    []string{"-c", "/data/frpc.ini"},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      frpcVolumeName,
+							ReadOnly:  true,
+							MountPath: "/data/frpc.ini",
+							SubPath:   "frpc.ini",
+						},
+					},
+				},
+			},
+		},
+	}
+	err = ctrl.SetControllerReference(endpoint, pod, r.Scheme)
+	if err != nil {
+		logger.Error(err, "set controller reference failed")
+		return nil, err
+	}
+	err = r.Create(ctx, pod)
+	if err != nil {
+		logger.Error(err, fmt.Sprintf("create pod %s failed", pod.Name))
+		return nil, err
+	}
+	logger.Info(fmt.Sprintf("created pod: %s", pod.Name))
+
+	return pod, nil
 }
 
 func (r *EndpointReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	err := mgr.GetFieldIndexer().IndexField(
+	var err error
+	err = mgr.GetFieldIndexer().IndexField(
 		&corev1.ConfigMap{}, endpointOwnerKey,
 		func(rawObj runtime.Object) []string {
 			config := rawObj.(*corev1.ConfigMap)
 			owner := metav1.GetControllerOf(config)
+			if owner == nil {
+				return nil
+			}
+			if owner.APIVersion != apiGVStr || owner.Kind != KindEndpoint {
+				return nil
+			}
+			return []string{owner.Name}
+		},
+	)
+	if err != nil {
+		return err
+	}
+	err = mgr.GetFieldIndexer().IndexField(
+		&corev1.Pod{}, endpointOwnerKey,
+		func(rawObj runtime.Object) []string {
+			pod := rawObj.(*corev1.Pod)
+			owner := metav1.GetControllerOf(pod)
 			if owner == nil {
 				return nil
 			}
