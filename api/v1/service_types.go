@@ -2,7 +2,6 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -28,7 +27,7 @@ type ServicePort struct {
 	Protocol ServicePortProtocol `json:"protocol"`
 
 	// The local port to expose (service.ports.TargetPort).
-	LocalPort intstr.IntOrString `json:"localPort"`
+	LocalPort int32 `json:"localPort"`
 
 	// The remote port to use (service.ports.Port).
 	RemotePort int32 `json:"remotePort"`

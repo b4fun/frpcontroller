@@ -45,11 +45,9 @@ spec:
               items:
                 properties:
                   localPort:
-                    anyOf:
-                    - type: integer
-                    - type: string
                     description: The local port to expose (service.ports.TargetPort).
-                    x-kubernetes-int-or-string: true
+                    format: int32
+                    type: integer
                   name:
                     description: The name of this port to use in frp side.
                     minLength: 1

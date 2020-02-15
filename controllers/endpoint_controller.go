@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/b4fun/frpcontroller/pkg/frpconfig"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -134,18 +135,17 @@ func (r *EndpointReconciler) ensureEndpointConfigMap(
 		logger.Error(err, "list services failed")
 		return nil, err
 	}
-	fmt.Println(serviceList)
 
-	// TODO: generate real config
+	frpcConfigContent, err := r.generateFrpcConfig(ctx, endpoint, &serviceList)
+	if err != nil {
+		logger.Error(err, "generate frpc config failed")
+		return nil, err
+	}
+
 	if frpcConfig.Data == nil {
 		frpcConfig.Data = map[string]string{}
 	}
-	frpcConfig.Data[frpcFileName] = `
-[common]
-server_addr = 127.0.0.1
-server_port = 1234
-token = foobar
-`
+	frpcConfig.Data[frpcFileName] = frpcConfigContent
 
 	if frpcConfigExisted {
 		if err := r.Update(ctx, frpcConfig); err != nil {
@@ -168,6 +168,43 @@ token = foobar
 	}
 
 	return frpcConfig, nil
+}
+
+func (r *EndpointReconciler) generateFrpcConfig(
+	ctx context.Context,
+	endpoint *frpv1.Endpoint,
+	services *frpv1.ServiceList,
+) (string, error) {
+	config := &frpconfig.FrpcConfig{
+		Common: &frpconfig.ConfigCommon{
+			ServerAddr: endpoint.Spec.Addr,
+			ServerPort: int(endpoint.Spec.Port),
+			Token:      endpoint.Spec.Token,
+		},
+		Apps: map[string]*frpconfig.ConfigApp{},
+	}
+
+	for _, service := range services.Items {
+		if service.Annotations == nil {
+			continue
+		}
+		localAddr, exists := service.Annotations[annotationKeyServiceClusterIP]
+		if !exists {
+			continue
+		}
+
+		for _, port := range service.Spec.Ports {
+			appName := fmt.Sprintf("%s_%s", service.Name, port.Name)
+			config.Apps[appName] = &frpconfig.ConfigApp{
+				Type:       string(port.Protocol),
+				RemotePort: int(port.RemotePort),
+				LocalPort:  int(port.LocalPort),
+				LocalAddr:  localAddr,
+			}
+		}
+	}
+
+	return config.GenerateIni()
 }
 
 func (r *EndpointReconciler) ensureEndpointPod(
