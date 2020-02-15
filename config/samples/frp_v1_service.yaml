@@ -1,0 +1,7 @@
+apiVersion: frp.go.build4.fun/v1
+kind: Service
+metadata:
+  name: service-sample
+spec:
+  # Add fields here
+  foo: bar

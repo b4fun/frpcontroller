@@ -1,0 +1,7 @@
+domain: go.build4.fun
+repo: github.com/b4fun/frpcontroller
+resources:
+- group: frp
+  kind: Service
+  version: v1
+version: "2"
