@@ -34,18 +34,57 @@ spec:
         spec:
           description: ServiceSpec defines the desired state of Service
           properties:
-            local_port:
-              description: LocalPort specifies the local port of the service.
-              type: integer
-            remote_port:
-              description: RemotePort specifies the remote port of the service.
-              type: integer
+            endpoint:
+              description: Name of the remote endpoint to use.
+              minLength: 1
+              type: string
+            ports:
+              description: The list of ports that are exposed to the frp server.
+              items:
+                properties:
+                  localPort:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: The local port to expose (service.ports.TargetPort).
+                    x-kubernetes-int-or-string: true
+                  name:
+                    description: The name of this port to use in frp side.
+                    minLength: 1
+                    type: string
+                  protocol:
+                    description: The protocol to use.
+                    enum:
+                    - TCP
+                    - UDP
+                    type: string
+                  remotePort:
+                    description: The remote port to use (service.ports.Port).
+                    format: int32
+                    type: integer
+                required:
+                - localPort
+                - name
+                - protocol
+                - remotePort
+                type: object
+              type: array
+            selector:
+              additionalProperties:
+                type: string
+              description: The selector for picking up pods to the service.
+              type: object
           required:
-          - local_port
-          - remote_port
+          - endpoint
+          - ports
+          - selector
           type: object
         status:
           description: ServiceStatus defines the observed state of Service
+          properties:
+            active:
+              description: Active tells if the connection is active.
+              type: boolean
           type: object
       type: object
   version: v1

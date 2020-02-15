@@ -2,11 +2,12 @@ package controllers
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 
 	corev1 "github.com/b4fun/frpcontroller/api/v1"
 )
@@ -22,12 +23,22 @@ type ServiceReconciler struct {
 // +kubebuilder:rbac:groups=core.go.build4.fun,resources=services/status,verbs=get;update;patch
 
 func (r *ServiceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("service", req.NamespacedName)
+	ctx := context.Background()
+	logger := r.Log.WithValues("service", req.NamespacedName)
 
-	// your logic here
+	logger.Info(fmt.Sprintf("namespaced name: %v", req.NamespacedName))
 
-	return ctrl.Result{}, nil
+	var service corev1.Service
+	if err := r.Get(ctx, req.NamespacedName, &service); err != nil {
+		logger.Error(err, "unable to fetch frp service")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	logger.Info(fmt.Sprintf("loaded service: %v, %t", service.Spec, service.Status.Active))
+
+	return ctrl.Result{
+		RequeueAfter: time.Duration(5) * time.Second,
+	}, nil
 }
 
 func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
