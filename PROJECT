@@ -4,4 +4,7 @@ resources:
 - group: frp
   kind: Service
   version: v1
+- group: frp
+  kind: Endpoint
+  version: v1
 version: "2"

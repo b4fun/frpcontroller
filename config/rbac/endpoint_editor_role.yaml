@@ -1,31 +1,9 @@
-
----
+# permissions to do edit endpoints.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
-  name: manager-role
+  name: endpoint-editor-role
 rules:
-- apiGroups:
-  - core.go.build4.fun
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - core.go.build4.fun
-  resources:
-  - services/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - frp.go.build4.fun
   resources:

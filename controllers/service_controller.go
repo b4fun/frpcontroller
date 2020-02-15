@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 
 	corev1 "github.com/b4fun/frpcontroller/api/v1"
 )
@@ -26,23 +26,40 @@ func (r *ServiceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	logger := r.Log.WithValues("service", req.NamespacedName)
 
-	logger.Info(fmt.Sprintf("namespaced name: %v", req.NamespacedName))
-
 	var service corev1.Service
-	if err := r.Get(ctx, req.NamespacedName, &service); err != nil {
-		logger.Error(err, "unable to fetch frp service")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	err := r.Get(ctx, req.NamespacedName, &service)
+	switch {
+	case err == nil:
+		return r.handleCreateOrUpdate(ctx, logger, service)
+	case apierrors.IsNotFound(err):
+		return r.handleDeleted(ctx, logger, service)
+	default:
+		logger.Error(err, "get service failed")
+
+		return ctrl.Result{}, err
 	}
-
-	logger.Info(fmt.Sprintf("loaded service: %v, %t", service.Spec, service.Status.Active))
-
-	return ctrl.Result{
-		RequeueAfter: time.Duration(5) * time.Second,
-	}, nil
 }
 
 func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Service{}).
 		Complete(r)
+}
+
+func (r *ServiceReconciler) handleCreateOrUpdate(
+	ctx context.Context,
+	logger logr.Logger,
+	service corev1.Service,
+) (ctrl.Result, error) {
+	logger.Info(fmt.Sprintf("to find endpoint: %s", service.Spec.Endpoint))
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ServiceReconciler) handleDeleted(
+	ctx context.Context,
+	logger logr.Logger,
+	service corev1.Service,
+) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }
