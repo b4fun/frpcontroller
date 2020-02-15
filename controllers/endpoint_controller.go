@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 	"time"
 
 	frpv1 "github.com/b4fun/frpcontroller/api/v1"
@@ -196,9 +197,10 @@ func (r *EndpointReconciler) generateFrpcConfig(
 		for _, port := range service.Spec.Ports {
 			appName := fmt.Sprintf("%s_%s", service.Name, port.Name)
 			config.Apps[appName] = &frpconfig.ConfigApp{
-				Type:       string(port.Protocol),
+				Type:       strings.ToLower(string(port.Protocol)),
 				RemotePort: int(port.RemotePort),
-				LocalPort:  int(port.LocalPort),
+				// NOTE: the service is exposed with remote port
+				LocalPort:  int(port.RemotePort),
 				LocalAddr:  localAddr,
 			}
 		}

@@ -18,7 +18,7 @@ type ConfigApp struct {
 	Type       string `ini:"type"`
 	RemotePort int    `ini:"remote_port"`
 	LocalPort  int    `ini:"local_port"`
-	LocalAddr  string `ini:"local_addr"`
+	LocalAddr  string `ini:"local_ip"`
 }
 
 // FrpcConfig describes a frpc configuration.

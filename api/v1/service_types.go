@@ -1,7 +1,9 @@
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -10,6 +12,10 @@ import (
 // ServicePortProtocol defines the protocol to use.
 // +kubebuilder:validation:Enum=TCP;UDP
 type ServicePortProtocol string
+
+func (s ServicePortProtocol) ToCorev1Protocol() corev1.Protocol {
+	return corev1.Protocol(s)
+}
 
 const (
 	ServicePortTCP ServicePortProtocol = "TCP"
@@ -31,6 +37,15 @@ type ServicePort struct {
 
 	// The remote port to use (service.ports.Port).
 	RemotePort int32 `json:"remotePort"`
+}
+
+func (p ServicePort) ToCorev1ServicePort() corev1.ServicePort {
+	return corev1.ServicePort{
+		Protocol:   p.Protocol.ToCorev1Protocol(),
+		Name:       p.Name,
+		Port:       p.RemotePort,
+		TargetPort: intstr.FromInt(int(p.LocalPort)),
+	}
 }
 
 // ServiceSpec defines the desired state of Service
