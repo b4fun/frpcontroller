@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= b4fun/frpcontroller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -55,7 +55,14 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 # Build the docker image
-docker-build: test
+# ...with cn optimization 😂
+docker-build:
+	docker build . -t ${IMG} \
+		--build-arg=goproxy="https://goproxy.cn" \
+		--build-arg=nonroot_image="gcr.azk8s.cn/distroless/static:nonroot"
+
+# Build the docker image in ci envrionment
+docker-build-ci:
 	docker build . -t ${IMG}
 
 # Push the docker image
