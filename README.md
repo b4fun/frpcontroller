@@ -13,6 +13,14 @@
 - test
 - add `ServerEndpoint` resource
 
+## Hacking
+
+### Do a release
+
+```
+$ RELEASE=v20200216 make release
+```
+
 ## Change History
 
 ### [`v20200216`](https://github.com/b4fun/frpcontroller/releases/tag/v20200216)
