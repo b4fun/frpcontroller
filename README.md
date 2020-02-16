@@ -1,4 +1,4 @@
-# [WIP] frp controller
+# frp controller
 
 | Resource | Link |
 |:----|:----|
@@ -7,10 +7,23 @@
 | Docker Image (latest) | [![](https://img.shields.io/docker/pulls/b4fun/frpcontroller?label=docker%20pulls%20%28latest%29)](https://hub.docker.com/r/b4fun/frpcontroller) |
 | Docker Image (v20200216) | [![](https://img.shields.io/docker/pulls/b4fun/frpcontroller?label=docker%20pulls%20%28v20200216%29)](https://hub.docker.com/r/b4fun/frpcontroller) |
 
+## Installation
+
+```
+$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/v20200216/install.yaml 
+# or, if you're installing from China
+$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/v20200216/install-cn.yaml 
+```
+
+## Usage
+
+TODO
+
 ## TODO
 
 - improve refresh usage of the controllers
 - test
+- doc
 - add `ServerEndpoint` resource
 
 ## Hacking
