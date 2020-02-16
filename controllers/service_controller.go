@@ -26,8 +26,8 @@ type ServiceReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=core.go.build4.fun,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core.go.build4.fun,resources=services/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frp.go.build4.fun,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frp.go.build4.fun,resources=services/status,verbs=get;update;patch
 
 func (r *ServiceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()

@@ -5,7 +5,7 @@ metadata:
   name: service-viewer-role
 rules:
 - apiGroups:
-  - core.go.build4.fun
+  - frp.go.build4.fun
   resources:
   - services
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - core.go.build4.fun
+  - frp.go.build4.fun
   resources:
   - services/status
   verbs:

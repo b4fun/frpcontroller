@@ -7,7 +7,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - core.go.build4.fun
+  - frp.go.build4.fun
   resources:
   - services
   verbs:
@@ -19,7 +19,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.go.build4.fun
+  - frp.go.build4.fun
   resources:
   - services/status
   verbs:
@@ -46,3 +46,16 @@ rules:
   - get
   - patch
   - update
+- apiGroups: [""]
+  resources:
+    - configmaps
+    - pods
+    - services
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
