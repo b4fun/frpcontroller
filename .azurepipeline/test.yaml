@@ -1,3 +1,11 @@
+trigger:
+  branches:
+    include:
+      - '*'
+  tags:
+    include:
+      - 'v*'
+
 pool:
   vmImage: 'ubuntu-latest'
 
