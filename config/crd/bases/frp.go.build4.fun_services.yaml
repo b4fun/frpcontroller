@@ -50,7 +50,9 @@ spec:
                     type: integer
                   name:
                     description: The name of this port to use in frp side.
+                    maxLength: 63
                     minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     type: string
                   protocol:
                     description: The protocol to use.

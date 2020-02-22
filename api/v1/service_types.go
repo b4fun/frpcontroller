@@ -25,6 +25,9 @@ const (
 type ServicePort struct {
 
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern="^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+	// NOTE: pattern copied from `k8s/validation/dns1123LabelFmt#de75bf944306`
 
 	// The name of this port to use in frp side.
 	Name string `json:"name"`
