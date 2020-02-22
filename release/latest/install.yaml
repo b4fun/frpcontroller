@@ -130,7 +130,9 @@ spec:
                     type: integer
                   name:
                     description: The name of this port to use in frp side.
+                    maxLength: 63
                     minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     type: string
                   protocol:
                     description: The protocol to use.
@@ -153,6 +155,11 @@ spec:
               additionalProperties:
                 type: string
               description: The selector for picking up pods to the service.
+              type: object
+            serviceLabels:
+              additionalProperties:
+                type: string
+              description: Extra labels for the generated service.
               type: object
           required:
           - endpoint
@@ -223,7 +230,31 @@ metadata:
   name: frpcontroller-manager-role
 rules:
 - apiGroups:
-  - frp.go.build4.fun
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
   resources:
   - services
   verbs:
@@ -234,14 +265,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - frp.go.build4.fun
-  resources:
-  - services/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - frp.go.build4.fun
   resources:
@@ -263,10 +286,8 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ""
+  - frp.go.build4.fun
   resources:
-  - configmaps
-  - pods
   - services
   verbs:
   - create
@@ -276,6 +297,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - frp.go.build4.fun
+  resources:
+  - services/status
+  verbs:
+  - get
+  - patch
+  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

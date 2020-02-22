@@ -10,9 +10,15 @@
 ## Installation
 
 ```
-$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/v20200216/install.yaml 
+$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml 
 # or, if you're installing from China
-$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/v20200216/install-cn.yaml 
+$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install-cn.yaml 
+```
+
+### Uninstallation
+
+```
+$ kubectl delete -f  https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml 
 ```
 
 ## Usage
@@ -32,9 +38,17 @@ TODO
 
 ```
 $ RELEASE=v20200216 make release
+$ RELEASE=v20200216 make build-docker
+$ RELEASE=latest make release
+$ RELEASE=latest make build-docker
 ```
 
 ## Change History
+
+### [`v20200222`](https://github.com/b4fun/frpcontroller/releases/tag/v20200222)
+
+- fix #1: add service port name validation
+- fix #2: add `serviceLabels` field to decorate created service labels
 
 ### [`v20200216`](https://github.com/b4fun/frpcontroller/releases/tag/v20200216)
 
