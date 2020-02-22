@@ -29,6 +29,11 @@ type ServiceReconciler struct {
 // +kubebuilder:rbac:groups=frp.go.build4.fun,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frp.go.build4.fun,resources=services/status,verbs=get;update;patch
 
+// Marking rbac settings for corev1 resources
+// +kubebuilder:rbac:groups=core,resources=services,verbs=create;delete;get;list;patch;update;watch
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=create;delete;get;list;patch;update;watch
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=create;delete;get;list;patch;update;watch
+
 func (r *ServiceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	logger := r.Log.WithValues("service", req.NamespacedName)
@@ -86,6 +91,13 @@ func (r *ServiceReconciler) handleCreateOrUpdate(
 		kservice.Spec.Ports = nil
 		for _, port := range service.Spec.Ports {
 			kservice.Spec.Ports = append(kservice.Spec.Ports, port.ToCorev1ServicePort())
+		}
+		if len(service.Spec.ServiceLabels) > 0 {
+			// NOTE: reset all previous labels
+			kservice.Labels = map[string]string{}
+			for k, v := range service.Spec.ServiceLabels {
+				kservice.Labels[k] = v
+			}
 		}
 		err = r.Update(ctx, &kservice)
 		if err != nil {
@@ -162,7 +174,7 @@ func (r *ServiceReconciler) handleCreateOrUpdate(
 	}
 
 	return ctrl.Result{
-		RequeueAfter: time.Duration(10 * time.Second),
+		RequeueAfter: 10 * time.Second,
 	}, nil
 }
 

@@ -74,6 +74,11 @@ spec:
                 type: string
               description: The selector for picking up pods to the service.
               type: object
+            serviceLabels:
+              additionalProperties:
+                type: string
+              description: Extra labels for the generated service.
+              type: object
           required:
           - endpoint
           - ports

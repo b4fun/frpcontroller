@@ -68,6 +68,9 @@ type ServiceSpec struct {
 
 	// The selector for picking up pods to the service.
 	Selector map[string]string `json:"selector"`
+
+	// Extra labels for the generated service.
+	ServiceLabels map[string]string `json:"serviceLabels,omitempty"`
 }
 
 type ServiceState string
