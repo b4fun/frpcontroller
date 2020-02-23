@@ -152,7 +152,7 @@ Now the client service had been exposed to frp server's 8083 port, we can acces 
 $ curl http://<server-ip>:8083
 ```
 
-The full example can be found from [example](./example).
+The full example can be found from [example](./example)
 
 ## Uninstallation
 

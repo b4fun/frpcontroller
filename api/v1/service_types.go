@@ -61,7 +61,7 @@ type ServiceSpec struct {
 	// Name of the remote endpoint to use.
 	Endpoint string `json:"endpoint"`
 
-	// The list of ports that are exposed to the frp server.
+	// List of ports that are exposed to the frp server.
 	// +patchMergeKey=port
 	// +patchStrategy=merge
 	// +listType=map

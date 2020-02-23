@@ -27,12 +27,12 @@ $ kubectl delete -f  https://raw.githubusercontent.com/b4fun/frpcontroller/maste
 | What to do | Doc to read |
 |:-----------|:------------|
 | Quick start | [Get Start](./doc/get-start.md)
+| Find the API | [API](./doc/api.md)
 
 ## TODO
 
 - improve refresh usage of the controllers
 - test
-- doc
 - add `ServerEndpoint` resource
 
 ## Hacking
