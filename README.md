@@ -63,3 +63,9 @@ $ RELEASE=latest make build-docker
 ## LICENSE
 
 MIT
+
+---
+
+a [@b4fun][@b4fun] project
+
+[@b4fun]: https://www.build4.fun
