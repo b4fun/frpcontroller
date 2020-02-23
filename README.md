@@ -12,8 +12,8 @@
 
 | What to do | Doc to read |
 |:-----------|:------------|
-| Quick start | [Get Start](./doc/get-start.md)
-| Find the API | [API](./doc/api.md)
+| Quick start | [Get Start](./docs/get-start.md)
+| Find the API | [API](./docs/api.md)
 
 ## TODO
 
