@@ -8,20 +8,6 @@
 | Docker Image (v20200222) | [![](https://img.shields.io/docker/pulls/b4fun/frpcontroller?label=docker%20pulls%20%28v20200222%29)](https://hub.docker.com/r/b4fun/frpcontroller) |
 | Docker Image (v20200216) | [![](https://img.shields.io/docker/pulls/b4fun/frpcontroller?label=docker%20pulls%20%28v20200216%29)](https://hub.docker.com/r/b4fun/frpcontroller) |
 
-## Installation
-
-```
-$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml
-# or, if you're installing from China
-$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install-cn.yaml
-```
-
-### Uninstallation
-
-```
-$ kubectl delete -f  https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml
-```
-
 ## Usage
 
 | What to do | Doc to read |
