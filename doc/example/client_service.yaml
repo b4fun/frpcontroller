@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.8-alpine
+    ports:
+      - containerPort: 80
+
+---
+apiVersion: frp.go.build4.fun/v1
+kind: Service
+metadata:
+  name: hello-service
+spec:
+  endpoint: hello-endpoint
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      remotePort: 8083
+      localPort: 80
+      name: nginx-80

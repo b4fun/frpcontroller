@@ -11,20 +11,22 @@
 ## Installation
 
 ```
-$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml 
+$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml
 # or, if you're installing from China
-$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install-cn.yaml 
+$ kubectl apply -f https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install-cn.yaml
 ```
 
 ### Uninstallation
 
 ```
-$ kubectl delete -f  https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml 
+$ kubectl delete -f  https://raw.githubusercontent.com/b4fun/frpcontroller/master/release/latest/install.yaml
 ```
 
 ## Usage
 
-TODO
+| What to do | Doc to read |
+|:-----------|:------------|
+| Quick start | [Get Start](./doc/get-start.md)
 
 ## TODO
 
