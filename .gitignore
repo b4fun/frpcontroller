@@ -23,3 +23,6 @@ vendor
 *.swp
 *.swo
 *~
+
+# test binaries
+test_binary/

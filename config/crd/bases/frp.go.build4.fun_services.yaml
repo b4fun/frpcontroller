@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.4
+    controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
   name: services.frp.go.build4.fun
 spec:
@@ -71,6 +71,10 @@ spec:
                 - remotePort
                 type: object
               type: array
+              x-kubernetes-list-map-keys:
+              - remotePort
+              - protocol
+              x-kubernetes-list-type: map
             selector:
               additionalProperties:
                 type: string

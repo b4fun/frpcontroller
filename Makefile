@@ -15,9 +15,13 @@ endif
 
 all: manager
 
-# Run tests
-test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+# Run tests in local
+test-local: generate fmt vet manifests
+	TEST_ASSET_KUBE_APISERVER="$(PWD)/test_binary/kube-apiserver" \
+	TEST_ASSET_ETCD="$(PWD)/test_binary/etcd" \
+	TEST_ASSET_KUBECTL="$(PWD)/test_binary/kubectl" \
+	USE_EXISTING_CLUSTER=true \
+	go test ./... -v -ginkgo.v -ginkgo.progress -coverprofile cover.out
 
 # Run tests in ci
 test-ci: generate fmt vet manifests
