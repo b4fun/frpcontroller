@@ -3,7 +3,9 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/b4fun/frpcontroller/pkg/frpconfig"
+	"strings"
+	"time"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -11,8 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
+
+	"github.com/b4fun/frpcontroller/pkg/frpconfig"
 
 	frpv1 "github.com/b4fun/frpcontroller/api/v1"
 )
@@ -58,9 +60,25 @@ func (r *EndpointReconciler) handleCreateOrUpdate(
 		return ctrl.Result{}, nil
 	}
 
-	_, err = r.ensureEndpointPod(ctx, logger, endpoint, frpcConfig)
+	frpcPod, err := r.ensureEndpointPod(ctx, logger, endpoint, frpcConfig)
 	if err != nil {
 		return ctrl.Result{}, nil
+	}
+
+	if frpcPod.Status.Phase == corev1.PodRunning {
+		endpoint.Status = frpv1.EndpointStatus{
+			State: frpv1.EndpointConnected,
+		}
+		if err := r.Status().Update(ctx, endpoint); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		endpoint.Status = frpv1.EndpointStatus{
+			State: frpv1.EndpointDisconnected,
+		}
+		if err := r.Status().Update(ctx, endpoint); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{
