@@ -41,7 +41,7 @@ spec:
               minLength: 1
               type: string
             ports:
-              description: The list of ports that are exposed to the frp server.
+              description: List of ports that are exposed to the frp server.
               items:
                 properties:
                   localPort:

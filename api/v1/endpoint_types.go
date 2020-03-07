@@ -49,6 +49,7 @@ type EndpointStatus struct {
 // +kubebuilder:object:root=true
 
 // Endpoint is the Schema for the endpoints API
+// +kubebuilder:subresource:status
 type Endpoint struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
