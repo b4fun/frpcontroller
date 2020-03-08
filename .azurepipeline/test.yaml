@@ -9,11 +9,6 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  TEST_ASSET_KUBE_APISERVER: '/tmp/kubebuilder_2.2.0_linux_amd64/bin/kube-apiserver'
-  TEST_ASSET_ETCD: '/tmp/kubebuilder_2.2.0_linux_amd64/bin/etcd'
-  TEST_ASSET_KUBECTL: '/tmp/kubebuilder_2.2.0_linux_amd64/bin/kubectl'
-
 steps:
   - task: GoTool@0
     inputs:
@@ -26,7 +21,5 @@ steps:
         go
       path: vendor
     displayName: Go_Vendor_Cache
-  - script: make setup-ci
-    displayName: Setup_CI
   - script: make test-ci
     displayName: Run_Test

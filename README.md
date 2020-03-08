@@ -18,12 +18,18 @@
 ## TODO
 
 - improve refresh usage of the controllers
-- test
 - add `ServerEndpoint` resource
 
 ## Hacking
 
-### Do a release
+### Run e2e test (in local)
+
+1. Setup a test cluster (e.g. by using [kind][kind])
+2. `make test-local`
+
+kind: https://github.com/kubernetes-sigs/kind
+
+### Make release
 
 ```
 $ RELEASE=v20200216 make release

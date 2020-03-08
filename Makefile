@@ -21,15 +21,14 @@ test-local: generate fmt vet manifests
 	go test ./... -v -ginkgo.v -ginkgo.progress -coverprofile cover.out
 
 # Run tests in ci
-test-ci: generate fmt vet manifests
-	go test -mod=vendor ./... -coverprofile cover.out
+# TODO(hbc): setup kind in CI
+test-ci: generate fmt vet manifests setup-ci
+	go list ./... | grep -v '/controllers' | xargs go test -mod=vendor
 	go mod vendor
 
 # Setup in ci
 setup-ci:
 	go mod vendor
-	# This will extract to /tmp/kubebuilder_2.2.0_linux_amd64
-	curl -L https://go.kubebuilder.io/dl/2.2.0/linux/amd64 | tar -xz -C /tmp/
 
 # Build manager binary
 manager: generate fmt vet
