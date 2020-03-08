@@ -26,7 +26,7 @@
 1. Setup a test cluster (e.g. by using [kind][kind])
 2. `make test-local`
 
-kind: https://github.com/kubernetes-sigs/kind
+[kind]: https://github.com/kubernetes-sigs/kind
 
 ### Make release
 
