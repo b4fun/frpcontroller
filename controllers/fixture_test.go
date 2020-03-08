@@ -58,15 +58,11 @@ type frpsSettings struct {
 	Token string
 }
 
-func (s *frpsSettings) getFrpsConfigName() string {
-	return "frps-config"
-}
-
 func (s *frpsSettings) buildFrpsConfig(namespace string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      s.getFrpsConfigName(),
-			Namespace: namespace,
+			GenerateName: "frps-config-",
+			Namespace:    namespace,
 		},
 		Data: map[string]string{
 			"frps.ini": fmt.Sprintf(`
@@ -79,15 +75,18 @@ log_level=info
 	}
 }
 
-func (s *frpsSettings) buildFrpsPod(namespace string) *corev1.Pod {
+func (s *frpsSettings) buildFrpsPod(
+	namespace string,
+	configMap *corev1.ConfigMap,
+) *corev1.Pod {
 	const (
 		configVolume = "config-volume"
 	)
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "frps-pod",
-			Namespace: namespace,
+			GenerateName: "frps-pod-",
+			Namespace:    namespace,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -113,7 +112,7 @@ func (s *frpsSettings) buildFrpsPod(namespace string) *corev1.Pod {
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "frps-config",
+								Name: configMap.Name,
 							},
 							Items: []corev1.KeyToPath{
 								{
@@ -141,7 +140,7 @@ func (s *frpsSettings) DeployToCluster(
 	}
 	log.Log.Info(fmt.Sprintf("created config map: %s", configMap.Name))
 
-	pod := s.buildFrpsPod(namespace)
+	pod := s.buildFrpsPod(namespace, configMap)
 	err = k8sClient.Create(ctx, pod)
 	if err != nil {
 		return nil, err
