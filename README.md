@@ -34,9 +34,11 @@ kind: https://github.com/kubernetes-sigs/kind
 $ export RELEASE=v20200216
 $ make release
 $ make docker-build
+$ make docker-push
 $ export RELEASE=latest
 $ make release
 $ make docker-build
+$ make docker-push
 ```
 
 ## Change History
