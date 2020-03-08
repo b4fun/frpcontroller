@@ -32,13 +32,20 @@ kind: https://github.com/kubernetes-sigs/kind
 ### Make release
 
 ```
-$ RELEASE=v20200216 make release
-$ RELEASE=v20200216 make build-docker
-$ RELEASE=latest make release
-$ RELEASE=latest make build-docker
+$ export RELEASE=v20200216
+$ make release
+$ make docker-build
+$ export RELEASE=latest
+$ make release
+$ make docker-build
 ```
 
 ## Change History
+
+### [`v20200308`](https://github.com/b4fun/frpcontroller/releases/tag/v20200308)
+
+- implement endpoint/service state update logic
+- add e2e tests
 
 ### [`v20200222`](https://github.com/b4fun/frpcontroller/releases/tag/v20200222)
 

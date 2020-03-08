@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-system
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
@@ -13,7 +13,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: endpoints.frp.go.build4.fun
 spec:
   group: frp.go.build4.fun
@@ -87,7 +87,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: services.frp.go.build4.fun
 spec:
   group: frp.go.build4.fun
@@ -196,7 +196,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-leader-election-role
   namespace: frpcontroller-system
 rules:
@@ -232,7 +232,7 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-manager-role
 rules:
 - apiGroups:
@@ -316,7 +316,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-proxy-role
 rules:
 - apiGroups:
@@ -336,7 +336,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-leader-election-rolebinding
   namespace: frpcontroller-system
 roleRef:
@@ -352,7 +352,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -367,7 +367,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -383,7 +383,7 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-controller-manager-metrics-service
   namespace: frpcontroller-system
 spec:
@@ -393,14 +393,14 @@ spec:
     targetPort: https
   selector:
     control-plane: controller-manager
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     control-plane: controller-manager
-    frp.go.build4.fun/release: latest
+    frp.go.build4.fun/release: v2020308
   name: frpcontroller-controller-manager
   namespace: frpcontroller-system
 spec:
@@ -408,12 +408,12 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-      frp.go.build4.fun/release: latest
+      frp.go.build4.fun/release: v2020308
   template:
     metadata:
       labels:
         control-plane: controller-manager
-        frp.go.build4.fun/release: latest
+        frp.go.build4.fun/release: v2020308
     spec:
       containers:
       - args:
@@ -431,7 +431,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: b4fun/frpcontroller:latest
+        image: b4fun/frpcontroller:v2020308
         name: manager
         resources:
           limits:
