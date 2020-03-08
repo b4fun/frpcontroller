@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -10,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 
 	frpv1 "github.com/b4fun/frpcontroller/api/v1"
 )
@@ -104,9 +105,10 @@ func (r *ServiceReconciler) handleCreateOrUpdate(
 			logger.Error(err, fmt.Sprintf("update corev1.service %s failed", service.Name))
 			return ctrl.Result{}, err
 		}
-		logger.Info(fmt.Sprintf("updated corev1.service: %s", service.Name))
+		logger.Info(fmt.Sprintf("updated corev1.service: %s", kservice.Name))
 		kserviceBound = &kservice
 	}
+
 	if kserviceBound == nil {
 		var kservicePorts []corev1.ServicePort
 		for _, port := range service.Spec.Ports {
@@ -130,7 +132,7 @@ func (r *ServiceReconciler) handleCreateOrUpdate(
 		}
 		err = r.Create(ctx, kserviceBound)
 		if err != nil {
-			logger.Error(err, "create corev1.service failed")
+			logger.Error(err, "create corev1.Service failed")
 			return ctrl.Result{}, err
 		}
 		logger.Info(fmt.Sprintf("created service %s", kserviceBound.Name))
@@ -151,31 +153,47 @@ func (r *ServiceReconciler) handleCreateOrUpdate(
 		))
 	}
 
-	var endpoint frpv1.Endpoint
+	var (
+		endpoint        frpv1.Endpoint
+		serviceNewState frpv1.ServiceState
+	)
 	err = r.Get(ctx, endpointName, &endpoint)
 	switch {
 	case err == nil:
-		// TODO: read config & update status
+		logger.Info(fmt.Sprintf("found endpoint %s (%s)", endpoint.Name, endpoint.Status.State))
+		serviceNewState = frpv1.ServiceStateInactive
+		if endpoint.Status.State == frpv1.EndpointConnected {
+			serviceNewState = frpv1.ServiceStateActive
+		}
 	case apierrors.IsNotFound(err):
 		logger.Info(fmt.Sprintf("endpoint %s does not exist, try later", endpointName.Name))
 
-		service.Status.State = frpv1.ServiceStateInactive
-		if err := r.Status().Update(ctx, service); err != nil {
-			logger.Error(err, "update service status failed")
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{
-			RequeueAfter: time.Duration(10 * time.Second),
-		}, nil
+		serviceNewState = frpv1.ServiceStateInactive
 	default:
 		logger.Error(err, "get endpoint failed")
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{
-		RequeueAfter: 10 * time.Second,
-	}, nil
+	if serviceNewState != service.Status.State {
+		service.Status.State = serviceNewState
+		if err := r.Status().Update(ctx, service); err != nil {
+			logger.Error(err, "update service status failed")
+			return ctrl.Result{}, err
+		}
+		logger.Info(fmt.Sprintf("updated service status to: %s", service.Status.State))
+	}
+
+	switch service.Status.State {
+	case frpv1.ServiceStateActive:
+		return ctrl.Result{
+			// NOTE: already active, requeue slower
+			RequeueAfter: time.Duration(30) * time.Second,
+		}, nil
+	default:
+		return ctrl.Result{
+			RequeueAfter: time.Duration(10) * time.Second,
+		}, nil
+	}
 }
 
 func (r *ServiceReconciler) handleDeleted(
