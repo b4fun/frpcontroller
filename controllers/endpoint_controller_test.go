@@ -306,4 +306,14 @@ var _ = g.Describe("EndpointController", func() {
 			)
 		})
 	})
+
+	g.It("should delete endpoint", func() {
+		ctx := context.Background()
+
+		endpointName := "test-endpoint"
+		endpointCreated := createEndpoint(testNamespace, endpointName)
+
+		err := k8sClient.Delete(ctx, endpointCreated)
+		m.Expect(err).NotTo(m.HaveOccurred(), "delete endpoint")
+	})
 })
