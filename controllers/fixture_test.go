@@ -11,7 +11,35 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	frpv1 "github.com/b4fun/frpcontroller/api/v1"
 )
+
+type retryOption struct {
+	RetryAttempts uint
+	RetryPolling  time.Duration
+}
+
+func (r *retryOption) Retry(fn func() error) error {
+	var lastErr error
+
+	if err := fn(); err == nil {
+		return nil
+	} else {
+		lastErr = err
+	}
+
+	for i := uint(1); i < r.RetryAttempts; i++ {
+		time.Sleep(r.RetryPolling)
+		if err := fn(); err == nil {
+			return nil
+		} else {
+			lastErr = err
+		}
+	}
+
+	return lastErr
+}
 
 func createNamespace(
 	ctx context.Context,
@@ -151,27 +179,106 @@ func (s *frpsSettings) DeployToCluster(
 		Namespace: pod.Namespace,
 		Name:      pod.Name,
 	}
-	for retry := 0; retry < 30; retry++ {
+
+	deployStatus := &frpsDeployStatus{}
+	retryOpt := retryOption{
+		RetryAttempts: 30,
+		RetryPolling:  time.Duration(10) * time.Second,
+	}
+	retryErr := retryOpt.Retry(func() error {
 		var (
 			podLatest corev1.Pod
 			err       error
 		)
 		err = k8sClient.Get(ctx, podName, &podLatest)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		log.Log.Info(fmt.Sprintf("pod status: %s", podLatest.Status.Phase))
 		if podLatest.Status.Phase == corev1.PodRunning {
-			return &frpsDeployStatus{
-				Endpoint: podLatest.Status.PodIP,
-				Port:     s.Port,
-				Token:    s.Token,
-			}, nil
+			deployStatus.Endpoint = podLatest.Status.PodIP
+			deployStatus.Port = s.Port
+			deployStatus.Token = s.Token
+			return nil
 		}
 
 		log.Log.Info("pod is not ready, retry...")
-		time.Sleep(10 * time.Second)
+		return errors.New("pod is not ready")
+	})
+	if retryErr != nil {
+		return nil, retryErr
 	}
 
-	return nil, errors.New("deploy retry failed")
+	return deployStatus, nil
+}
+
+func waitEndpointReady(
+	ctx context.Context,
+	k8sClient client.Client,
+	namespace string,
+	name string,
+	retryOption *retryOption,
+) (*frpv1.Endpoint, error) {
+	endpointReady := &frpv1.Endpoint{}
+	var retryErr error
+	retryErr = retryOption.Retry(func() error {
+		endpointName := client.ObjectKey{
+			Namespace: namespace,
+			Name:      name,
+		}
+		endpoint := &frpv1.Endpoint{}
+		if err := k8sClient.Get(ctx, endpointName, endpoint); err != nil {
+			return err
+		}
+
+		endpointStatusString := fmt.Sprintf("endpoint status: %+v", endpoint.Status)
+		log.Log.Info(endpointStatusString)
+		if endpoint.Status.State != frpv1.EndpointConnected {
+			return errors.New(endpointStatusString)
+		}
+
+		*endpointReady = *endpoint
+		return nil
+	})
+
+	if retryErr != nil {
+		return nil, retryErr
+	}
+	return endpointReady, nil
+}
+
+func createEndpoint(
+	ctx context.Context,
+	k8sClient client.Client,
+	namespace string,
+	frpsDeploy *frpsDeployStatus,
+) (*frpv1.Endpoint, error) {
+	endpointSpec := frpv1.EndpointSpec{
+		Addr:  frpsDeploy.Endpoint,
+		Port:  frpsDeploy.Port,
+		Token: frpsDeploy.Token,
+	}
+	endpointToCreate := &frpv1.Endpoint{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:    namespace,
+			GenerateName: "frpc-endpoint-",
+		},
+		Spec: endpointSpec,
+	}
+
+	err := k8sClient.Create(ctx, endpointToCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	return waitEndpointReady(
+		ctx,
+		k8sClient,
+		endpointToCreate.Namespace,
+		endpointToCreate.Name,
+		&retryOption{
+			RetryAttempts: 120,
+			RetryPolling:  time.Duration(1) * time.Second,
+		},
+	)
 }

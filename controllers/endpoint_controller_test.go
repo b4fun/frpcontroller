@@ -4,15 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	g "github.com/onsi/ginkgo"
 	m "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	frpv1 "github.com/b4fun/frpcontroller/api/v1"
 )
 
 var _ = g.Describe("EndpointController", func() {
@@ -20,6 +18,11 @@ var _ = g.Describe("EndpointController", func() {
 		resourcePollingTimeout  = "1m"
 		resourcePollingInterval = "2s"
 	)
+
+	resourceRetryOptions := &retryOption{
+		RetryAttempts: 30,
+		RetryPolling:  time.Duration(2) * time.Second,
+	}
 
 	var (
 		frpsDeploy    *frpsDeployStatus
@@ -54,62 +57,8 @@ var _ = g.Describe("EndpointController", func() {
 		close(done)
 	}, 300)
 
-	waitEndpointReady := func(namespace string, name string) *frpv1.Endpoint {
-		g.By("waiting the endpoint to be ready")
-		ctx := context.Background()
-		endpointName := client.ObjectKey{
-			Namespace: namespace,
-			Name:      name,
-		}
-		endpoint := &frpv1.Endpoint{}
-		m.Eventually(func() error {
-			err := k8sClient.Get(ctx, endpointName, endpoint)
-			if err != nil {
-				return err
-			}
-
-			endpointStatusString := fmt.Sprintf("endpoint status: %+v", endpoint.Status)
-			log.Log.Info(endpointStatusString)
-
-			if endpoint.Status.State != frpv1.EndpointConnected {
-				return errors.New(endpointStatusString)
-			}
-
-			return nil
-		}, resourcePollingTimeout, resourcePollingInterval).
-			ShouldNot(m.HaveOccurred())
-
-		return endpoint
-	}
-
-	createEndpoint := func(namespace string, name string) *frpv1.Endpoint {
-		ctx := context.Background()
-
-		endpointSpec := frpv1.EndpointSpec{
-			Addr:  frpsDeploy.Endpoint,
-			Port:  frpsDeploy.Port,
-			Token: frpsDeploy.Token,
-		}
-		endpointToCreate := &frpv1.Endpoint{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      name,
-			},
-			Spec: endpointSpec,
-		}
-
-		g.By("creating an endpoint object in the cluster")
-		err := k8sClient.Create(ctx, endpointToCreate)
-		m.Expect(err).NotTo(
-			m.HaveOccurred(),
-			"create an endpoint",
-		)
-
-		return waitEndpointReady(endpointToCreate.Namespace, endpointToCreate.Name)
-	}
-
-	getEndpointConfigMap := func(namespace string, name string) *corev1.ConfigMap {
-		var configMapRetrieved *corev1.ConfigMap
+	getEndpointConfigMap := func(namespace string, endpointName string) *corev1.ConfigMap {
+		configMapRetrieved := &corev1.ConfigMap{}
 		m.Eventually(func() error {
 			var (
 				configMapList corev1.ConfigMapList
@@ -127,7 +76,7 @@ var _ = g.Describe("EndpointController", func() {
 			for _, configMap := range configMapList.Items {
 				isOwnByEndpoint := false
 				for _, owner := range configMap.OwnerReferences {
-					if owner.Name == name {
+					if owner.Name == endpointName {
 						isOwnByEndpoint = true
 						break
 					}
@@ -142,7 +91,7 @@ var _ = g.Describe("EndpointController", func() {
 					)
 				}
 				foundAlready = true
-				configMapRetrieved = &configMap
+				*configMapRetrieved = configMap
 			}
 			if foundAlready {
 				return nil
@@ -153,8 +102,8 @@ var _ = g.Describe("EndpointController", func() {
 		return configMapRetrieved
 	}
 
-	getEndpointPod := func(namespace string, name string) *corev1.Pod {
-		var podRetrieved *corev1.Pod
+	getEndpointPod := func(namespace string, endpointName string) *corev1.Pod {
+		podRetrieved := &corev1.Pod{}
 		m.Eventually(func() error {
 			var (
 				podList corev1.PodList
@@ -176,7 +125,7 @@ var _ = g.Describe("EndpointController", func() {
 					continue
 				}
 				for _, owner := range pod.OwnerReferences {
-					if owner.Name == name {
+					if owner.Name == endpointName {
 						isOwnByEndpoint = true
 						break
 					}
@@ -191,7 +140,7 @@ var _ = g.Describe("EndpointController", func() {
 					)
 				}
 				foundAlready = true
-				podRetrieved = &pod
+				*podRetrieved = pod
 			}
 			if foundAlready {
 				return nil
@@ -203,12 +152,13 @@ var _ = g.Describe("EndpointController", func() {
 	}
 
 	g.It("should create endpoint", func() {
-		endpointName := "test-endpoint"
-		endpointCreated := createEndpoint(testNamespace, endpointName)
+		ctx := context.Background()
+		endpointCreated, err := createEndpoint(ctx, k8sClient, testNamespace, frpsDeploy)
+		m.Expect(err).NotTo(m.HaveOccurred())
+		log.Log.Info(fmt.Sprintf("endpoint created: %s", endpointCreated.Name))
 
 		g.By("validating created endpoint properties")
 		m.Expect(endpointCreated.Namespace).To(m.Equal(testNamespace))
-		m.Expect(endpointCreated.Name).To(m.Equal(endpointName))
 
 		var (
 			configMapCreated *corev1.ConfigMap
@@ -218,6 +168,7 @@ var _ = g.Describe("EndpointController", func() {
 		g.By("inspecting created config map", func() {
 			g.By("getting created config map")
 			configMapCreated = getEndpointConfigMap(endpointCreated.Namespace, endpointCreated.Name)
+			log.Log.Info(fmt.Sprintf("retrieved config map: %s", configMapCreated.Name))
 
 			g.By("inspecting config map properties")
 			m.Expect(configMapCreated.Namespace).To(m.Equal(testNamespace))
@@ -227,6 +178,7 @@ var _ = g.Describe("EndpointController", func() {
 		g.By("inspecting created pod", func() {
 			g.By("getting created pod")
 			podCreated = getEndpointPod(endpointCreated.Namespace, endpointCreated.Name)
+			log.Log.Info(fmt.Sprintf("retrieved pod: %s", podCreated.Name))
 
 			g.By("inspecting pod properties")
 			m.Expect(podCreated.Namespace).To(m.Equal(testNamespace))
@@ -251,17 +203,23 @@ var _ = g.Describe("EndpointController", func() {
 		newFrps, err := newFrpsSettings.DeployToCluster(ctx, k8sClient, testNamespace)
 		m.Expect(err).NotTo(m.HaveOccurred())
 
-		endpointName := "test-endpoint"
-		endpointCreated := createEndpoint(testNamespace, endpointName)
+		endpointCreated, err := createEndpoint(ctx, k8sClient, testNamespace, frpsDeploy)
+		m.Expect(err).NotTo(m.HaveOccurred())
+		log.Log.Info(fmt.Sprintf("endpoint created: %s", endpointCreated.Name))
 
 		g.By("updating the endpoint settings")
 		endpointCreated.Spec.Addr = newFrps.Endpoint
-		endpointCreated.Spec.Port = int32(newFrps.Port)
+		endpointCreated.Spec.Port = newFrps.Port
 		endpointCreated.Spec.Token = newFrps.Token
 		err = k8sClient.Update(ctx, endpointCreated)
 		m.Expect(err).NotTo(m.HaveOccurred())
 
-		endpointUpdated := waitEndpointReady(endpointCreated.Namespace, endpointCreated.Name)
+		endpointUpdated, err := waitEndpointReady(
+			ctx, k8sClient, endpointCreated.Namespace, endpointCreated.Name,
+			resourceRetryOptions,
+		)
+		m.Expect(err).NotTo(m.HaveOccurred())
+		log.Log.Info(fmt.Sprintf("endpoint updated: %s", endpointCreated.Name))
 
 		var (
 			configMapCreated *corev1.ConfigMap
@@ -271,6 +229,7 @@ var _ = g.Describe("EndpointController", func() {
 		g.By("inspecting created config map", func() {
 			g.By("getting created config map")
 			configMapCreated = getEndpointConfigMap(endpointUpdated.Namespace, endpointUpdated.Name)
+			log.Log.Info(fmt.Sprintf("retrieved config map: %s", configMapCreated.Name))
 
 			g.By("inspecting config map settings")
 			m.Expect(configMapCreated.Data).NotTo(m.BeEmpty())
@@ -293,6 +252,7 @@ var _ = g.Describe("EndpointController", func() {
 				return errors.New("endpoint pod with latest config map is not ready")
 
 			}, resourcePollingTimeout, resourcePollingInterval).ShouldNot(m.HaveOccurred())
+			log.Log.Info(fmt.Sprintf("retrieved pod: %s", podCreated.Name))
 
 			g.By("inspecting pod properties")
 			m.Expect(podCreated.Namespace).To(m.Equal(testNamespace))
@@ -310,10 +270,10 @@ var _ = g.Describe("EndpointController", func() {
 	g.It("should delete endpoint", func() {
 		ctx := context.Background()
 
-		endpointName := "test-endpoint"
-		endpointCreated := createEndpoint(testNamespace, endpointName)
+		endpointCreated, err := createEndpoint(ctx, k8sClient, testNamespace, frpsDeploy)
+		m.Expect(err).NotTo(m.HaveOccurred())
 
-		err := k8sClient.Delete(ctx, endpointCreated)
+		err = k8sClient.Delete(ctx, endpointCreated)
 		m.Expect(err).NotTo(m.HaveOccurred(), "delete endpoint")
 	})
 })
