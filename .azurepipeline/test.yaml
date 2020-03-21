@@ -9,17 +9,24 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-steps:
-  - task: GoTool@0
-    inputs:
-      version: '1.13.5'
-  - task: Cache@2
-    inputs:
-      key: 'go | "$(Agent.OS)" | go.*'
-      restoreKeys: |
-        go | "$(Agent.OS)"
-        go
-      path: vendor
-    displayName: Go_Vendor_Cache
-  - script: make test-ci
-    displayName: Run_Test
+jobs:
+  - job: test
+    timeoutInMinutes: 60
+    variables:
+      KIND_VERSION: 0.6.1
+    steps:
+      - template: templates/kind.setup.yaml
+      - task: GoTool@0
+        inputs:
+          version: '1.13.5'
+      - task: Cache@2
+        inputs:
+          key: 'go | "$(Agent.OS)" | go.*'
+          restoreKeys: |
+            go | "$(Agent.OS)"
+            go
+          path: vendor
+        displayName: "Go vendor module"
+      - script: make test-ci
+        displayName: "Run test"
+      - template: templates/kind.cleanup.yaml

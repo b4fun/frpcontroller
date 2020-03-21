@@ -1,0 +1,19 @@
+steps:
+  - bash: |
+      curl -LO https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/kind-linux-amd64
+      chmod +x kind-linux-amd64
+      sudo mv kind-linux-amd64 /usr/local/bin/kind
+    displayName: "Download kind v$(KIND_VERSION) binary"
+
+  - bash: |
+      echo "##vso[task.setvariable variable=KIND_CLUSTER_NAME]kind-e2e-$(openssl rand -hex 6)"
+    displayName: "Set random cluster name"
+
+  - bash: |
+      kind create cluster --name $(KIND_CLUSTER_NAME) -v=3 --wait=1m
+      export KUBECONFIG="$(kind get kubeconfig-path)"
+      echo "$KUBECONFIG"
+      echo "##vso[task.setvariable variable=KUBECONFIG]${KUBECONFIG}"
+      kubectl version
+      kubectl get nodes
+    displayName: "Create kind cluster"

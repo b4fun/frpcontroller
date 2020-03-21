@@ -23,7 +23,8 @@ test-local: generate fmt vet manifests
 # Run tests in ci
 # TODO(hbc): setup kind in CI
 test-ci: generate fmt vet manifests setup-ci
-	go list ./... | grep -v '/controllers' | xargs go test -mod=vendor
+	USE_EXISTING_CLUSTER=true \
+	go test ./... -v -ginkgo.v -ginkgo.progress -coverprofile cover.out
 	go mod vendor
 
 # Setup in ci

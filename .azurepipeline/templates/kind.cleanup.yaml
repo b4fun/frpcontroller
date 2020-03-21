@@ -1,0 +1,5 @@
+steps:
+  - bash: |
+      kind delete cluster --name $(KIND_CLUSTER_NAME)
+    condition: always()
+    displayName: "Cleanup kind cluster"
