@@ -3,7 +3,7 @@ module github.com/b4fun/frpcontroller
 go 1.13
 
 require (
-	github.com/go-logr/logr v0.1.0
+	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/smartystreets/goconvey v1.6.4 // indirect
